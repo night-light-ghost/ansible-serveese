@@ -1,0 +1,74 @@
+# roles/common/tasks/iptables.yml
+#
+- name: Allow SSH INPUT
+  ansible.builtin.iptables:
+    chain: INPUT
+    action: append
+    protocol: tcp
+    destination_ports: "22"
+    ctstate: NEW,ESTABLISHED
+    jump: ACCEPT
+
+- name: Allow SSH OUTPUT
+  ansible.builtin.iptables:
+    chain: OUTPUT
+    action: append
+    protocol: tcp
+    destination_ports: "22"
+    ctstate: NEW,ESTABLISHED
+    jump: ACCEPT
+
+# Check existing chains
+#- name: Get existing iptables rules
+#  command: iptables -n -L
+#  changed_when: false
+#  register: iptables_rules
+#
+# make new chain if nonexistent
+#- name: create custom iptables chain LOGGING
+#    command: iptables -N LOGGING
+#    when: "'Chain LOGGING' not in iptables_rules.stdout"
+
+# Create Logging Chain
+- iptables:
+    chain: LOGGING
+    chain_management: true
+    state: present
+
+- name: Log everything else
+  ansible.builtin.iptables:
+    chain: LOGGING
+    action: append
+    state: present
+    limit: 1/minute
+    log_prefix: "Dropped Traffic: "
+    log_level: 4
+    jump: LOG
+
+- name: match unmatched input traffic to LOGGING chain
+  ansible.builtin.iptables:
+    chain: INPUT
+    jump: LOGGING
+
+#- name: match unmatched traffic to LOGGING chain
+#  ansible.builtin.iptables:
+#    chain: OUTPUT
+#    jump: LOGGING
+
+- name: Set policy for input chain to DROP
+  ansible.builtin.iptables:
+    chain: INPUT
+    policy: DROP    
+
+#- name: Set policy for output chain to DROP
+#  ansible.builtin.iptables:
+#    chain: OUTPUT
+#    policy: DROP    
+
+- name: add rule for logging chain to DROP (cause you can't affect custom chain  policy)
+  ansible.builtin.iptables:
+    chain: LOGGING
+    action: append
+    state: present
+    jump: DROP
+

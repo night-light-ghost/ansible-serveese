@@ -1,0 +1,10 @@
+# roles/common/tasks/main.yaml
+---
+- name: activate firewall rules
+#  debug: 
+#    msg: "gonna run iptables"
+  import_tasks: iptables.yaml
+
+- name: flush firewall rules
+  import_tasks: flush-iptables.yaml
+  when: "{{ flush_rules | default('false') }}"
