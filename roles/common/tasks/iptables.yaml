@@ -60,6 +60,12 @@
     chain: INPUT
     policy: DROP    
 
+- name: Set ipv6 policy for input chain to DROP
+  ansible.builtin.iptables:
+    chain: INPUT
+    policy: DROP    
+    ip_version: "ipv6"
+#
 #- name: Set policy for output chain to DROP
 #  ansible.builtin.iptables:
 #    chain: OUTPUT
@@ -72,3 +78,7 @@
     state: present
     jump: DROP
 
+- name: Save current ruleset
+  community.general.iptables_state:
+    state: saved
+    path: /etc/sysconfig/iptables
